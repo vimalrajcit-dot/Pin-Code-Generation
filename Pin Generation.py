@@ -76,7 +76,7 @@ if uploaded_file:
         }
         df["Body Material-Code"] = df["Body Material"].apply(lambda x: contains_map(x, body_mat_map))
 
-        df["Body Studs-Code"] = df["Body Studs"].apply(
+        df["Body Studs-Code"] = df["Body Studs "].apply(
             lambda x: "2" if pd.notna(x) and "coat" in str(x).lower() else "1"
         )
 
