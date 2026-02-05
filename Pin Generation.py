@@ -140,7 +140,7 @@ if uploaded_file:
 
         desc_columns = [
             "Model Number","In x Body x Out Size","Rating Class","End Connection",
-            "Body Material","Body Studs","Bonnet Type","Actuator Model",
+            "Body Material","Body Studs ","Bonnet Type","Actuator Model",
             "Actuator Size","Plug Material","Trim Type","Seat Type","Trim Characteristic"
         ]
 
