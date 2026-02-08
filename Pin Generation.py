@@ -119,6 +119,84 @@ if uploaded_file:
         df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 3))
         df["Seat Type-Code"] = ""
 
+        # =======================
+# PLUG TYPE DESCRIPTION
+# =======================
+def plug_type_desc(model):
+    if pd.isna(model):
+        return ""
+    
+    m = str(model)
+    x = extract_after_dash(m, 2)
+
+    if "-41" in m:
+        mapping = {
+            "0": "Undefined",
+            "3": "Pressure energized PTFE seal ring",
+            "4": "With pilot",
+            "5": "Metal seal ring",
+            "6": "PTFE seal ring",
+            "7": "HT metal seal ring",
+            "9": "Graphite seal ring",
+        }
+        return mapping.get(x, "")
+
+    if "-21" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Contoured",
+            "6": "Soft Seat",
+            "7": "Single Stage Lo-dB/Anti-Cavitation",
+            "8": "Double Stage Cavitation Containment",
+            "9": "Double Stage Lo-dB",
+        }
+        return mapping.get(x, "")
+
+    return ""
+
+df["Plug Type-Des"] = df["Model Number"].apply(lambda x: plug_type_desc(x))
+
+
+# =======================
+# TRIM TYPE DESCRIPTION
+# =======================
+def trim_type_desc(model):
+    if pd.isna(model):
+        return ""
+
+    m = str(model)
+    x = extract_after_dash(m, 3)
+
+    if "-41" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Standard cage / Linear",
+            "2": "Standard cage / Equal percentage",
+            "3": "Lo-dB® / Anticavitation single stage / Linear",
+            "4": "Lo-dB® single stage with diffuser / Linear",
+            "5": "Lo-dB® double stage / Linear",
+            "6": "VRT (stack) Type S / Linear",
+            "7": "VRT (stack partial) Type S / modified percentage",
+            "8": "VRT (cage) Type C / Linear",
+            "9": "Anticavitation double stage / Linear (1)",
+            "A": "High Capacity Linear",
+            "B": "High Capacity Equal %",
+            "C": "High Capacity Lo-DB / Anti-Cav",
+        }
+        return mapping.get(x, "")
+
+    if "-21" in m:
+        mapping = {
+            "0": "Undefined",
+            "4": "Quick Change",
+            "5": "Threaded",
+        }
+        return mapping.get(x, "")
+
+    return ""
+
+df["Trim Type-Des"] = df["Model Number"].apply(lambda x: trim_type_desc(x))
+
         trim_char_map = {
             "Linear": "1",
             "Equal Percentage": "2",
