@@ -3,6 +3,8 @@ import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
+import tempfile
+import os
 
 st.set_page_config(page_title="PIN Code Generator", layout="wide")
 st.title("🚀 PIN Code Generator")
@@ -22,19 +24,22 @@ def extract_after_dash(text, position):
     if pd.isna(text):
         return ""
     parts = str(text).split("-")
-    if len(parts) > position:
-        return parts[position].strip()
-    return ""
+    return parts[position] if len(parts) > position else ""
 
 
 # UPLOAD FILE
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
+    # Read the uploaded file
     df = pd.read_excel(uploaded_file)
     df.columns = df.columns.str.strip()
 
     st.info("File uploaded successfully ✅")
+    
+    # Show preview of data
+    with st.expander("Preview Data"):
+        st.write(df.head())
 
     if st.button("Run Processing"):
         progress = st.progress(0)
@@ -43,16 +48,19 @@ if uploaded_file:
         # =======================
         # MODEL NUMBER
         # =======================
+        status.text("Processing Model Number...")
         model_map = {
             "-5": "05", "-10": "10", "-18": "18", "-21": "21",
             "-33": "33", "-35": "35", "-41": "41",
             "-77": "77", "-78": "78", "-80": "80", "-28": "28",
         }
         df["Model Number-Code"] = df["Model Number"].apply(lambda x: contains_map(x, model_map))
+        progress.progress(10)
 
         # =======================
         # SIZE
         # =======================
+        status.text("Processing Size...")
         size_map = {
             "0.5 x": "05", "0.7 x": "75", "1 x": "01", "1.5 x": "15",
             "2 x": "02", "3 x": "03", "4 x": "04", "6 x": "06",
@@ -62,55 +70,67 @@ if uploaded_file:
             "36 x": "36", "40 x": "40", "42 x": "42", "48 x": "48"
         }
         df["In x Body x Out Size-Code"] = df["In x Body x Out Size"].apply(lambda x: contains_map(x, size_map))
+        progress.progress(20)
 
         # =======================
         # RATING CLASS
         # =======================
+        status.text("Processing Rating Class...")
         rating_map = {
             "150": "1", "300": "2", "600": "3",
             "900": "4", "1500": "5", "2500": "6"
         }
         df["Rating Class-Code"] = df["Rating Class"].apply(lambda x: contains_map(x, rating_map))
+        progress.progress(30)
 
         # =======================
         # END CONNECTION
         # =======================
+        status.text("Processing End Connection...")
         end_conn_map = {
             "RF": "RF", "FF": "FF", "RTJ": "RJ",
             "Lugged": "LG", "BW": "BW", "SW": "SW"
         }
         df["End Connection-Code"] = df["End Connection"].apply(lambda x: contains_map(x, end_conn_map))
+        progress.progress(40)
 
         # =======================
         # BODY MATERIAL
         # =======================
+        status.text("Processing Body Material...")
         body_mat_map = {
             "WCC": "A", "LCC": "B", "A105": "C", "LF2": "D",
             "CF8 ": "E", "CF3 ": "F", "CF8M": "G", "CF3M": "H",
             "Duplex": "I", "Super Duplex": "J", "Aluminum Bronze": "K"
         }
         df["Body Material-Code"] = df["Body Material"].apply(lambda x: contains_map(x, body_mat_map))
+        progress.progress(45)
 
         # =======================
         # BODY STUDS
         # =======================
+        status.text("Processing Body Studs...")
         df["Body Studs-Code"] = df["Body Studs"].apply(
             lambda x: "2" if pd.notna(x) and "coat" in str(x).lower() else "1"
         )
+        progress.progress(50)
 
         # =======================
         # BONNET TYPE
         # =======================
+        status.text("Processing Bonnet Type...")
         bonnet_map = {
             "Standard": "ST",
             "Extended": "EB",
             "Finned": "FB"
         }
         df["Bonnet Type-Code"] = df["Bonnet Type"].apply(lambda x: contains_map(x, bonnet_map, "NA"))
+        progress.progress(55)
 
         # =======================
         # ACTUATOR MODEL
         # =======================
+        status.text("Processing Actuator Model...")
         act_model_map = {
             "Top Mounted Handwheel": "20",
             "87": "87", "88": "88",
@@ -120,10 +140,12 @@ if uploaded_file:
             "Electrical Rotary": "ER"
         }
         df["Actuator Model-Code"] = df["Actuator Model"].apply(lambda x: contains_map(x, act_model_map))
+        progress.progress(60)
 
         # =======================
         # ACTUATOR SIZE
         # =======================
+        status.text("Processing Actuator Size...")
         act_size_map = {
             "6": "A", "12": "B", "16": "C", "20": "D",
             "23L": "F", "23": "E", "11": "G", "13": "H",
@@ -131,10 +153,12 @@ if uploaded_file:
             "Electric": "L", "10": "M"
         }
         df["Actuator Size-Code"] = df["Actuator Size"].apply(lambda x: contains_map(x, act_size_map))
+        progress.progress(65)
 
         # =======================
         # PLUG MATERIAL
         # =======================
+        status.text("Processing Plug Material...")
         def plug_material_code(text):
             if pd.isna(text):
                 return ""
@@ -150,17 +174,21 @@ if uploaded_file:
             return ""
 
         df["Plug Material-Code"] = df["Plug Material"].apply(plug_material_code)
+        progress.progress(70)
 
         # =======================
         # TRIM / SEAT FROM MODEL
         # =======================
+        status.text("Processing Trim/Seat from Model...")
         df["Plug Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 2))
         df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 3))
         df["Seat Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 4))
+        progress.progress(75)
 
         # =======================
         # TRIM CHARACTERISTIC
         # =======================
+        status.text("Processing Trim Characteristic...")
         trim_char_map = {
             "Linear": "1",
             "Lin": "1",
@@ -171,10 +199,12 @@ if uploaded_file:
             "Quick Opening": "4"
         }
         df["Trim Characteristic-Code"] = df["Trim Characteristic"].apply(lambda x: contains_map(x, trim_char_map))
+        progress.progress(80)
 
         # =======================
         # PLUG TYPE DESCRIPTION
         # =======================
+        status.text("Processing Plug Type Description...")
         def plug_type_desc(model):
             if pd.isna(model):
                 return ""
@@ -253,10 +283,12 @@ if uploaded_file:
             return ""
 
         df["Plug Type-Des"] = df["Model Number"].apply(lambda x: plug_type_desc(x))
+        progress.progress(85)
 
         # =======================
         # TRIM TYPE DESCRIPTION
         # =======================
+        status.text("Processing Trim Type Description...")
         def trim_type_desc(model):
             if pd.isna(model):
                 return ""
@@ -333,10 +365,12 @@ if uploaded_file:
             return ""
 
         df["Trim Type-Des"] = df["Model Number"].apply(lambda x: trim_type_desc(x))
+        progress.progress(90)
 
         # =======================
         # PIN CODE
         # =======================
+        status.text("Generating PIN Code...")
         pin_columns = [
             "Model Number-Code",
             "In x Body x Out Size-Code",
@@ -355,10 +389,12 @@ if uploaded_file:
 
         df["PIN-Code"] = df[pin_columns].fillna("").astype(str).agg("".join, axis=1)
         df["PIN-Code-Length"] = df["PIN-Code"].astype(str).str.len()
+        progress.progress(95)
 
         # =======================
         # PIN DESCRIPTION
         # =======================
+        status.text("Generating PIN Description...")
         desc_columns = [
             "Model Number",
             "In x Body x Out Size",
@@ -381,18 +417,21 @@ if uploaded_file:
         # =======================
         # SAVE FILE
         # =======================
-        output_file = Path(uploaded_file.name).with_name(
-            Path(uploaded_file.name).stem + "_PIN_Generated.xlsx"
-        )
-        df.to_excel(output_file, index=False)
+        status.text("Saving file...")
+        
+        # Create a temporary file to save the Excel
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+            output_path = tmp_file.name
+        
+        # Save the dataframe to the temporary file
+        df.to_excel(output_path, index=False)
 
         # =======================
-        # FORMATTING - ONLY FOR NEW COLUMNS
+        # FORMATTING
         # =======================
-        wb = load_workbook(output_file)
+        wb = load_workbook(output_path)
         ws = wb.active
 
-        # Define fills
         light_blue_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
         green_fill = PatternFill(start_color="92D050", end_color="92D050", fill_type="solid")
         yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
@@ -404,7 +443,18 @@ if uploaded_file:
             if cell_value:
                 header_map[cell_value] = col
 
-        # Define new columns that should be formatted
+        # Format PIN-Code-Length column
+        if "PIN-Code-Length" in header_map:
+            col_idx = header_map["PIN-Code-Length"]
+            for row in range(2, ws.max_row + 1):
+                cell = ws.cell(row=row, column=col_idx)
+                try:
+                    if cell.value and int(cell.value) < 18:
+                        cell.fill = light_blue_fill
+                except:
+                    pass
+
+        # Format new columns
         new_columns = [
             "Model Number-Code", "In x Body x Out Size-Code", "Rating Class-Code",
             "End Connection-Code", "Body Material-Code", "Body Studs-Code",
@@ -414,42 +464,37 @@ if uploaded_file:
             "Plug Type-Des", "PIN-Code", "PIN-Code description", "PIN-Code-Length"
         ]
 
-        # Apply formatting only to new columns
         for col_name in new_columns:
             if col_name in header_map:
                 col_idx = header_map[col_name]
                 
-                # Format header with green fill
+                # Green fill for headers
                 header_cell = ws.cell(row=1, column=col_idx)
                 header_cell.fill = green_fill
                 
-                # Apply special formatting for PIN-Code-Length column
-                if col_name == "PIN-Code-Length":
-                    for row in range(2, ws.max_row + 1):
-                        cell = ws.cell(row=row, column=col_idx)
-                        try:
-                            if cell.value and int(cell.value) < 18:
-                                cell.fill = light_blue_fill
-                        except (ValueError, TypeError):
-                            pass
-                
-                # Apply yellow fill to empty cells in all new columns
+                # Yellow fill for empty cells
                 for row in range(2, ws.max_row + 1):
                     cell = ws.cell(row=row, column=col_idx)
                     if cell.value is None or str(cell.value).strip() == "":
                         cell.fill = yellow_fill
 
         # Save the formatted workbook
-        wb.save(output_file)
+        wb.save(output_path)
 
         progress.progress(100)
         status.success("✅ Processing complete!")
 
+        # Read the file for download
+        with open(output_path, "rb") as f:
+            file_data = f.read()
+        
+        # Clean up temp file
+        os.unlink(output_path)
+
         # Provide download button
-        with open(output_file, "rb") as f:
-            st.download_button(
-                label="📥 Download Processed Excel",
-                data=f,
-                file_name=output_file.name,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+        st.download_button(
+            label="📥 Download Processed Excel",
+            data=file_data,
+            file_name=f"{Path(uploaded_file.name).stem}_PIN_Generated.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
