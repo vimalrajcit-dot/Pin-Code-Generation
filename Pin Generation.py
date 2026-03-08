@@ -189,15 +189,15 @@ if uploaded_file:
             "Seat Type", "Trim Characteristic"
         ]
 
-       available_desc_cols = [col for col in desc_columns if col in df.columns]
+        available_desc_cols = [col for col in desc_columns if col in df.columns]
 
-if available_desc_cols:
-    df["PIN-Code description"] = df[available_desc_cols] \
-        .fillna("") \
-        .astype(str) \
-        .agg(", ".join, axis=1)
-else:
-    df["PIN-Code description"] = ""
+        if available_desc_cols:
+            df["PIN-Code description"] = df[available_desc_cols] \
+                .fillna("") \
+                .astype(str) \
+                .agg(", ".join, axis=1)
+        else:
+            df["PIN-Code description"] = ""
 
         progress.progress(70)
 
