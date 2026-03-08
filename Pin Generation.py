@@ -251,16 +251,59 @@ for col_name, col_idx in header_map.items():
 
 wb.save(output_file)
 
-        progress.progress(100)
-        status.success("✅ Processing complete!")
+        if st.button("Run Processing"):
+    progress = st.progress(0)
+    status = st.empty()
 
-        # -----------------------
-        # DOWNLOAD BUTTON
-        # -----------------------
-        with open(output_file, "rb") as f:
-            st.download_button(
-                label="📥 Download Processed Excel",
-                data=f,
-                file_name=output_file.name,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            )
+    # MODEL NUMBER
+    model_map = {...}
+    df["Model Number-Code"] = df["Model Number"].apply(lambda x: contains_map(x, model_map))
+    progress.progress(10)
+
+    # SIZE, RATING, etc... (your code)
+
+    # PIN DESCRIPTION block
+    available_desc_cols = [col for col in desc_columns if col in df.columns]
+    if available_desc_cols:
+        df["PIN-Code description"] = df[available_desc_cols] \
+            .fillna("") \
+            .astype(str) \
+            .agg(", ".join, axis=1)
+    else:
+        df["PIN-Code description"] = ""
+
+    progress.progress(70)
+
+    # SAVE FILE
+    output_file = Path(uploaded_file.name).with_name(
+        Path(uploaded_file.name).stem + "_PIN_Generated.xlsx"
+    )
+    df.to_excel(output_file, index=False)
+
+    # FORMATTING (openpyxl)
+    wb = load_workbook(output_file)
+    ws = wb.active
+
+    # header and fill logic (indented properly)
+    for col_name, col_idx in header_map.items():
+        cell = ws.cell(row=1, column=col_idx)
+        if col_name in new_columns:
+            cell.fill = green_fill
+
+        for row in range(2, ws.max_row + 1):
+            cell = ws.cell(row=row, column=col_idx)
+            if cell.value is None or str(cell.value).strip() == "":
+                cell.fill = yellow_fill
+
+    wb.save(output_file)
+
+    progress.progress(100)
+    status.success("✅ Processing complete!")
+
+    with open(output_file, "rb") as f:
+        st.download_button(
+            label="📥 Download Processed Excel",
+            data=f,
+            file_name=output_file.name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
