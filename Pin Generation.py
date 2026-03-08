@@ -384,22 +384,22 @@ df["PIN-Code description"] = df[desc_columns].fillna("").astype(str).agg(", ".jo
 # SAVE FILE
 # =======================
 # SAVE FILE
-        output_file = Path(uploaded_file.name).with_name(
+output_file = Path(uploaded_file.name).with_name(
             Path(uploaded_file.name).stem + "_PIN_Generated.xlsx"
         )
-        df.to_excel(output_file, index=False)
+df.to_excel(output_file, index=False)
 
         # FORMATTING
-        wb = load_workbook(output_file)
-        ws = wb.active
+wb = load_workbook(output_file)
+ws = wb.active
 
-        light_blue_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
-        green_fill = PatternFill(start_color="92D050", end_color="92D050", fill_type="solid")
-        yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+light_blue_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
+green_fill = PatternFill(start_color="92D050", end_color="92D050", fill_type="solid")
+yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
-        header_map = {ws.cell(row=1, column=col).value: col for col in range(1, ws.max_column + 1)}
+header_map = {ws.cell(row=1, column=col).value: col for col in range(1, ws.max_column + 1)}
 
-        if "PIN-Code-Length" in header_map:
+if "PIN-Code-Length" in header_map:
             col_idx = header_map["PIN-Code-Length"]
             for row in range(2, ws.max_row + 1):
                 cell = ws.cell(row=row, column=col_idx)
@@ -409,14 +409,14 @@ df["PIN-Code description"] = df[desc_columns].fillna("").astype(str).agg(", ".jo
                 except:
                     pass
 
-        new_columns = ["Model Number-Code", "In x Body x Out Size-Code", "Rating Class-Code",
+new_columns = ["Model Number-Code", "In x Body x Out Size-Code", "Rating Class-Code",
                        "End Connection-Code", "Body Material-Code", "Body Studs-Code",
                        "Bonnet Type-Code", "Actuator Model-Code", "Actuator Size-Code",
                        "Plug Material-Code", "Plug Type-Code", "Trim Type-Code",
                        "Seat Type-Code", "Trim Characteristic-Code", "Trim Type-Des",
                        "Plug Type-Des", "PIN-Code", "PIN-Code description"]
 
-        for col_name, col_idx in header_map.items():
+for col_name, col_idx in header_map.items():
             cell = ws.cell(row=1, column=col_idx)
             if col_name in new_columns:
                 cell.fill = green_fill
@@ -428,10 +428,10 @@ df["PIN-Code description"] = df[desc_columns].fillna("").astype(str).agg(", ".jo
 
         wb.save(output_file)
 
-        progress.progress(100)
-        status.success("✅ Processing complete!")
+progress.progress(100)
+status.success("✅ Processing complete!")
 
-        with open(output_file, "rb") as f:
+with open(output_file, "rb") as f:
             st.download_button(
                 label="📥 Download Processed Excel",
                 data=f,
