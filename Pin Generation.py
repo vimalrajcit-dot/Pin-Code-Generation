@@ -1,4 +1,31 @@
+import streamlit as st
 import pandas as pd
+from pathlib import Path
+from openpyxl import load_workbook
+
+st.set_page_config(page_title="PIN Code Generator", layout="wide")
+st.title("🚀 PIN Code Generator")
+
+# -----------------------
+# UPLOAD FILE
+# -----------------------
+uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
+
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    df.columns = df.columns.str.strip()
+
+    st.info("File uploaded successfully ✅")
+
+    # -----------------------
+    # RUN BUTTON
+    # -----------------------
+    if st.button("Run Processing"):
+        progress = st.progress(0)
+        status = st.empty()
+
+        # -----------------------
+       import pandas as pd
 from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
@@ -452,3 +479,36 @@ for col_name in new_columns:
 wb.save(output_file)
 
 print(f"Completed ✅ File saved as:\n{output_file}")
+
+        # -----------------------
+        # Example: 
+        # folder_path, excel_files = ...
+        # df["Model Number-Code"] = ...
+        # df["PIN-Code"] = ...
+        # df.to_excel(output_file, index=False)
+        # wb = load_workbook(output_file)
+        # formatting...
+        
+        status.write("Processing... ⚙️")
+        
+        # --- Update progress as you process steps ---
+        progress.progress(10)
+        # (update progress inside your code at key steps)
+        progress.progress(50)
+        progress.progress(100)
+
+        status.success("✅ Processing complete!")
+
+        # -----------------------
+        # DOWNLOAD BUTTON
+        # -----------------------
+        output_file = Path("PIN_Generated.xlsx")
+        df.to_excel(output_file, index=False)  # save final result
+
+        with open(output_file, "rb") as f:
+            st.download_button(
+                label="📥 Download Processed Excel",
+                data=f,
+                file_name="PIN_Generated.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
