@@ -22,7 +22,9 @@ def extract_after_dash(text, position):
     if pd.isna(text):
         return ""
     parts = str(text).split("-")
-    return parts[position] if len(parts) > position else ""
+    if len(parts) > position:
+        return parts[position].strip()
+    return ""
 
 
 # UPLOAD FILE
@@ -245,15 +247,12 @@ if uploaded_file:
                     "3": "Trim C: 1-stage unbalanced",
                     "4": "Trim X: 5-stage partially balanced",
                     "5": "Trim Y: 3-stage unbalanced",
-                    
-
                 }
                 return mapping.get(x, "")
 
             return ""
 
         df["Plug Type-Des"] = df["Model Number"].apply(lambda x: plug_type_desc(x))
-
 
         # =======================
         # TRIM TYPE DESCRIPTION
@@ -387,48 +386,66 @@ if uploaded_file:
         )
         df.to_excel(output_file, index=False)
 
-        # FORMATTING
+        # =======================
+        # FORMATTING - ONLY FOR NEW COLUMNS
+        # =======================
         wb = load_workbook(output_file)
         ws = wb.active
 
+        # Define fills
         light_blue_fill = PatternFill(start_color="ADD8E6", end_color="ADD8E6", fill_type="solid")
         green_fill = PatternFill(start_color="92D050", end_color="92D050", fill_type="solid")
         yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
-        header_map = {ws.cell(row=1, column=col).value: col for col in range(1, ws.max_column + 1)}
+        # Get header mapping
+        header_map = {}
+        for col in range(1, ws.max_column + 1):
+            cell_value = ws.cell(row=1, column=col).value
+            if cell_value:
+                header_map[cell_value] = col
 
-        if "PIN-Code-Length" in header_map:
-            col_idx = header_map["PIN-Code-Length"]
-            for row in range(2, ws.max_row + 1):
-                cell = ws.cell(row=row, column=col_idx)
-                try:
-                    if int(cell.value) < 18:
-                        cell.fill = light_blue_fill
-                except:
-                    pass
+        # Define new columns that should be formatted
+        new_columns = [
+            "Model Number-Code", "In x Body x Out Size-Code", "Rating Class-Code",
+            "End Connection-Code", "Body Material-Code", "Body Studs-Code",
+            "Bonnet Type-Code", "Actuator Model-Code", "Actuator Size-Code",
+            "Plug Material-Code", "Plug Type-Code", "Trim Type-Code",
+            "Seat Type-Code", "Trim Characteristic-Code", "Trim Type-Des",
+            "Plug Type-Des", "PIN-Code", "PIN-Code description", "PIN-Code-Length"
+        ]
 
-        new_columns = ["Model Number-Code", "In x Body x Out Size-Code", "Rating Class-Code",
-                       "End Connection-Code", "Body Material-Code", "Body Studs-Code",
-                       "Bonnet Type-Code", "Actuator Model-Code", "Actuator Size-Code",
-                       "Plug Material-Code", "Plug Type-Code", "Trim Type-Code",
-                       "Seat Type-Code", "Trim Characteristic-Code", "Trim Type-Des",
-                       "Plug Type-Des", "PIN-Code", "PIN-Code description"]
+        # Apply formatting only to new columns
+        for col_name in new_columns:
+            if col_name in header_map:
+                col_idx = header_map[col_name]
+                
+                # Format header with green fill
+                header_cell = ws.cell(row=1, column=col_idx)
+                header_cell.fill = green_fill
+                
+                # Apply special formatting for PIN-Code-Length column
+                if col_name == "PIN-Code-Length":
+                    for row in range(2, ws.max_row + 1):
+                        cell = ws.cell(row=row, column=col_idx)
+                        try:
+                            if cell.value and int(cell.value) < 18:
+                                cell.fill = light_blue_fill
+                        except (ValueError, TypeError):
+                            pass
+                
+                # Apply yellow fill to empty cells in all new columns
+                for row in range(2, ws.max_row + 1):
+                    cell = ws.cell(row=row, column=col_idx)
+                    if cell.value is None or str(cell.value).strip() == "":
+                        cell.fill = yellow_fill
 
-        for col_name, col_idx in header_map.items():
-            cell = ws.cell(row=1, column=col_idx)
-            if col_name in new_columns:
-                cell.fill = green_fill
-
-            for row in range(2, ws.max_row + 1):
-                cell = ws.cell(row=row, column=col_idx)
-                if cell.value is None or str(cell.value).strip() == "":
-                    cell.fill = yellow_fill
-
+        # Save the formatted workbook
         wb.save(output_file)
 
         progress.progress(100)
         status.success("✅ Processing complete!")
 
+        # Provide download button
         with open(output_file, "rb") as f:
             st.download_button(
                 label="📥 Download Processed Excel",
