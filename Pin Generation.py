@@ -243,12 +243,13 @@ for col_name, col_idx in header_map.items():
     cell = ws.cell(row=1, column=col_idx)
     if col_name in new_columns:
         cell.fill = green_fill
-            for row in range(2, ws.max_row + 1):
-                cell = ws.cell(row=row, column=col_idx)
-                if cell.value is None or str(cell.value).strip() == "":
-                    cell.fill = yellow_fill
 
-        wb.save(output_file)
+    for row in range(2, ws.max_row + 1):
+        cell = ws.cell(row=row, column=col_idx)
+        if cell.value is None or str(cell.value).strip() == "":
+            cell.fill = yellow_fill
+
+wb.save(output_file)
 
         progress.progress(100)
         status.success("✅ Processing complete!")
