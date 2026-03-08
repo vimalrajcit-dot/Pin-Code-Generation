@@ -6,10 +6,13 @@ from openpyxl.styles import PatternFill
 import tempfile
 import os
 
+# =======================
+# STREAMLIT START CODE
+# =======================
 st.set_page_config(page_title="PIN Code Generator", layout="wide")
 st.title("🚀 PIN Code Generator")
 
-
+# Define your functions here (they need to be outside the button click)
 def contains_map(text, mapping, default=""):
     if pd.isna(text):
         return default
@@ -19,28 +22,188 @@ def contains_map(text, mapping, default=""):
             return value
     return default
 
-
 def extract_after_dash(text, position):
     if pd.isna(text):
         return ""
     parts = str(text).split("-")
     return parts[position] if len(parts) > position else ""
 
+def plug_material_code(text):
+    if pd.isna(text):
+        return ""
+    t = str(text)
+    if "316" in t and ("Hard" in t or "HF" in t):
+        return "1"
+    if "316" in t:
+        return "2"
+    if "410" in t:
+        return "3"
+    if "CA6NM" in t:
+        return "4"
+    return ""
 
-# UPLOAD FILE
+def plug_type_desc(model):
+    if pd.isna(model):
+        return ""
+    
+    m = str(model)
+    x = extract_after_dash(m, 2)
+
+    if "-41" in m:
+        mapping = {
+            "0": "Undefined",
+            "3": "Pressure energized PTFE seal ring",
+            "4": "With pilot",
+            "5": "Metal seal ring",
+            "6": "PTFE seal ring",
+            "7": "HT metal seal ring",
+            "9": "Graphite seal ring",
+        }
+        return mapping.get(x, "")
+
+    if "-21" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Contoured",
+            "3": "Close Clearance Lo-dB/Anti-cavitation",
+            "5": "Over Travel",
+            "6": "Soft Seat",
+            "7": "Single Stage Lo-dB/Anti-cavitation",
+            "8": "Double Stage Anti-cavitation",
+            "9": "Double Stage Lo-dB",
+        }
+        return mapping.get(x, "")
+
+    if "-10" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Double Seat",
+        }
+        return mapping.get(x, "")   
+    
+    if "-18" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Axial Flow High Resistance (Downseating)",
+        }
+        return mapping.get(x, "") 
+    
+    if "-78" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Axial Flow High Resistance (Downseating)",
+        }
+        return mapping.get(x, "")
+    
+    if "-80" in m:
+        mapping = {
+            "0": "Undefined",
+            "3": "Top and Port Guided",
+        }
+        return mapping.get(x, "")
+    
+    if "-77" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Trim A: 9-stage unbalanced",
+            "2": "Trim B: 5-stage unbalanced",
+            "3": "Trim C: 1-stage unbalanced",
+            "4": "Trim X: 5-stage partially balanced",
+            "5": "Trim Y: 3-stage unbalanced",
+        }
+        return mapping.get(x, "")
+
+    return ""
+
+def trim_type_desc(model):
+    if pd.isna(model):
+        return ""
+
+    m = str(model)
+    x = extract_after_dash(m, 3)
+    y = extract_after_dash(m, 4)
+
+    if "-41" in m:
+        mapping = {
+            "0": "Undefined",
+            "1": "Standard cage / Linear",
+            "2": "Standard cage / Equal percentage",
+            "3": "Lo-dB® / Anticavitation single stage / Linear",
+            "4": "Lo-dB® single stage with diffuser / Linear",
+            "5": "Lo-dB® double stage / Linear",
+            "6": "VRT (stack) Type S / Linear",
+            "7": "VRT (stack partial) Type S / modified percentage",
+            "8": "VRT (cage) Type C / Linear",
+            "9": "Anticavitation double stage / Linear (1)",
+            "A": "High Capacity Linear",
+            "B": "High Capacity Equal %",
+            "C": "High Capacity Lo-DB / Anti-Cav",
+        }
+        return mapping.get(x, "")
+
+    if "-21" in m:
+        mapping = {
+            "0": "Undefined",
+            "4": "Quick Change",
+            "5": "Threaded",
+        }
+        return mapping.get(y, "")
+    
+    if "-18" in m:
+        mapping = {
+            "0": "Optional Trim",
+            "1": "Trim A, Balanced Hard Seat",
+            "2": "Trim B, Balanced Hard Seat",
+            "3": "Trim C, Balanced Hard Seat",
+            "4": "Trim A, Balanced Soft Seat",
+            "5": "Trim B, Balanced Soft Seat",
+            "6": "Trim C, Balanced Soft Seat",
+            "7": "Trim A, Unbalanced Hard Seat",
+            "8": "Trim B, Unbalanced Hard Seat",
+            "9": "Trim C, Unbalanced Hard Seat",
+        }
+        return mapping.get(y, "")
+    
+    if "-78" in m:
+        mapping = {
+            "0": "Optional Trim",
+            "1": "Trim A, Balanced Hard Seat",
+            "2": "Trim B, Balanced Hard Seat",
+            "3": "Trim C, Balanced Hard Seat",
+            "4": "Trim A, Balanced Soft Seat",
+            "5": "Trim B, Balanced Soft Seat",
+            "6": "Trim C, Balanced Soft Seat",
+            "7": "Trim A, Unbalanced Hard Seat",
+            "8": "Trim B, Unbalanced Hard Seat",
+            "9": "Trim C, Unbalanced Hard Seat",
+        }
+        return mapping.get(y, "")
+    
+    if "-77" in m:
+        mapping = {
+            "0": "Optional Trim",
+            "1": "Bottom entry; outlet spool",
+            "2": "Top entry; bolted bonnet",
+            "3": "Compact Top entry; bolted bonnet",
+        }
+        return mapping.get(y, "")
+
+    return ""
+
+# File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
 if uploaded_file:
     # Read the uploaded file
     df = pd.read_excel(uploaded_file)
     df.columns = df.columns.str.strip()
-
+    
     st.info("File uploaded successfully ✅")
     
-    # Show preview of data
+    # Optional: Show preview of data
     with st.expander("Preview Data"):
         st.write(df.head())
-
+    
     if st.button("Run Processing"):
         progress = st.progress(0)
         status = st.empty()
@@ -55,7 +218,7 @@ if uploaded_file:
             "-77": "77", "-78": "78", "-80": "80", "-28": "28",
         }
         df["Model Number-Code"] = df["Model Number"].apply(lambda x: contains_map(x, model_map))
-        progress.progress(10)
+        progress.progress(5)
 
         # =======================
         # SIZE
@@ -70,7 +233,7 @@ if uploaded_file:
             "36 x": "36", "40 x": "40", "42 x": "42", "48 x": "48"
         }
         df["In x Body x Out Size-Code"] = df["In x Body x Out Size"].apply(lambda x: contains_map(x, size_map))
-        progress.progress(20)
+        progress.progress(10)
 
         # =======================
         # RATING CLASS
@@ -81,7 +244,7 @@ if uploaded_file:
             "900": "4", "1500": "5", "2500": "6"
         }
         df["Rating Class-Code"] = df["Rating Class"].apply(lambda x: contains_map(x, rating_map))
-        progress.progress(30)
+        progress.progress(15)
 
         # =======================
         # END CONNECTION
@@ -92,7 +255,7 @@ if uploaded_file:
             "Lugged": "LG", "BW": "BW", "SW": "SW"
         }
         df["End Connection-Code"] = df["End Connection"].apply(lambda x: contains_map(x, end_conn_map))
-        progress.progress(40)
+        progress.progress(20)
 
         # =======================
         # BODY MATERIAL
@@ -104,7 +267,7 @@ if uploaded_file:
             "Duplex": "I", "Super Duplex": "J", "Aluminum Bronze": "K"
         }
         df["Body Material-Code"] = df["Body Material"].apply(lambda x: contains_map(x, body_mat_map))
-        progress.progress(45)
+        progress.progress(25)
 
         # =======================
         # BODY STUDS
@@ -113,7 +276,7 @@ if uploaded_file:
         df["Body Studs-Code"] = df["Body Studs"].apply(
             lambda x: "2" if pd.notna(x) and "coat" in str(x).lower() else "1"
         )
-        progress.progress(50)
+        progress.progress(30)
 
         # =======================
         # BONNET TYPE
@@ -125,7 +288,7 @@ if uploaded_file:
             "Finned": "FB"
         }
         df["Bonnet Type-Code"] = df["Bonnet Type"].apply(lambda x: contains_map(x, bonnet_map, "NA"))
-        progress.progress(55)
+        progress.progress(35)
 
         # =======================
         # ACTUATOR MODEL
@@ -140,7 +303,7 @@ if uploaded_file:
             "Electrical Rotary": "ER"
         }
         df["Actuator Model-Code"] = df["Actuator Model"].apply(lambda x: contains_map(x, act_model_map))
-        progress.progress(60)
+        progress.progress(40)
 
         # =======================
         # ACTUATOR SIZE
@@ -153,28 +316,14 @@ if uploaded_file:
             "Electric": "L", "10": "M"
         }
         df["Actuator Size-Code"] = df["Actuator Size"].apply(lambda x: contains_map(x, act_size_map))
-        progress.progress(65)
+        progress.progress(45)
 
         # =======================
         # PLUG MATERIAL
         # =======================
         status.text("Processing Plug Material...")
-        def plug_material_code(text):
-            if pd.isna(text):
-                return ""
-            t = str(text)
-            if "316" in t and ("Hard" in t or "HF" in t):
-                return "1"
-            if "316" in t:
-                return "2"
-            if "410" in t:
-                return "3"
-            if "CA6NM" in t:
-                return "4"
-            return ""
-
         df["Plug Material-Code"] = df["Plug Material"].apply(plug_material_code)
-        progress.progress(70)
+        progress.progress(50)
 
         # =======================
         # TRIM / SEAT FROM MODEL
@@ -183,7 +332,7 @@ if uploaded_file:
         df["Plug Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 2))
         df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 3))
         df["Seat Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 4))
-        progress.progress(75)
+        progress.progress(55)
 
         # =======================
         # TRIM CHARACTERISTIC
@@ -199,173 +348,21 @@ if uploaded_file:
             "Quick Opening": "4"
         }
         df["Trim Characteristic-Code"] = df["Trim Characteristic"].apply(lambda x: contains_map(x, trim_char_map))
-        progress.progress(80)
+        progress.progress(60)
 
         # =======================
         # PLUG TYPE DESCRIPTION
         # =======================
         status.text("Processing Plug Type Description...")
-        def plug_type_desc(model):
-            if pd.isna(model):
-                return ""
-            
-            m = str(model)
-            x = extract_after_dash(m, 2)
-
-            if "-41" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "3": "Pressure energized PTFE seal ring",
-                    "4": "With pilot",
-                    "5": "Metal seal ring",
-                    "6": "PTFE seal ring",
-                    "7": "HT metal seal ring",
-                    "9": "Graphite seal ring",
-                }
-                return mapping.get(x, "")
-
-            if "-21" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "1": "Contoured",
-                    "3": "Close Clearance Lo-dB/Anti-cavitation",
-                    "5": "Over Travel",
-                    "6": "Soft Seat",
-                    "7": "Single Stage Lo-dB/Anti-cavitation",
-                    "8": "Double Stage Anti-cavitation",
-                    "9": "Double Stage Lo-dB",
-                }
-                return mapping.get(x, "")
-
-            if "-10" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "1": "Double Seat",
-
-                }
-                return mapping.get(x, "")   
-            
-            if "-18" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "1": "Axial Flow High Resistance (Downseating)",
-
-                }
-                return mapping.get(x, "") 
-            
-            if "-78" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "1": "Axial Flow High Resistance (Downseating)",
-
-                }
-                return mapping.get(x, "")
-            
-            if "-80" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "3": "Top and Port Guided",
-
-                }
-                return mapping.get(x, "")
-            
-            if "-77" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "1": "Trim A: 9-stage unbalanced",
-                    "2": "Trim B: 5-stage unbalanced",
-                    "3": "Trim C: 1-stage unbalanced",
-                    "4": "Trim X: 5-stage partially balanced",
-                    "5": "Trim Y: 3-stage unbalanced",
-                }
-                return mapping.get(x, "")
-
-            return ""
-
         df["Plug Type-Des"] = df["Model Number"].apply(lambda x: plug_type_desc(x))
-        progress.progress(85)
+        progress.progress(70)
 
         # =======================
         # TRIM TYPE DESCRIPTION
         # =======================
         status.text("Processing Trim Type Description...")
-        def trim_type_desc(model):
-            if pd.isna(model):
-                return ""
-
-            m = str(model)
-            x = extract_after_dash(m, 3)
-            y = extract_after_dash(m, 4)
-
-            if "-41" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "1": "Standard cage / Linear",
-                    "2": "Standard cage / Equal percentage",
-                    "3": "Lo-dB® / Anticavitation single stage / Linear",
-                    "4": "Lo-dB® single stage with diffuser / Linear",
-                    "5": "Lo-dB® double stage / Linear",
-                    "6": "VRT (stack) Type S / Linear",
-                    "7": "VRT (stack partial) Type S / modified percentage",
-                    "8": "VRT (cage) Type C / Linear",
-                    "9": "Anticavitation double stage / Linear (1)",
-                    "A": "High Capacity Linear",
-                    "B": "High Capacity Equal %",
-                    "C": "High Capacity Lo-DB / Anti-Cav",
-                }
-                return mapping.get(x, "")
-
-            if "-21" in m:
-                mapping = {
-                    "0": "Undefined",
-                    "4": "Quick Change",
-                    "5": "Threaded",
-                }
-                return mapping.get(y, "")
-            
-            if "-18" in m:
-                mapping = {
-                    "0": "Optional Trim",
-                    "1": "Trim A, Balanced Hard Seat",
-                    "2": "Trim B, Balanced Hard Seat",
-                    "3": "Trim C, Balanced Hard Seat",
-                    "4": "Trim A, Balanced Soft Seat",
-                    "5": "Trim B, Balanced Soft Seat",
-                    "6": "Trim C, Balanced Soft Seat",
-                    "7": "Trim A, Unbalanced Hard Seat",
-                    "8": "Trim B, Unbalanced Hard Seat",
-                    "9": "Trim C, Unbalanced Hard Seat",
-                }
-                return mapping.get(y, "")
-            
-            if "-78" in m:
-                mapping = {
-                    "0": "Optional Trim",
-                    "1": "Trim A, Balanced Hard Seat",
-                    "2": "Trim B, Balanced Hard Seat",
-                    "3": "Trim C, Balanced Hard Seat",
-                    "4": "Trim A, Balanced Soft Seat",
-                    "5": "Trim B, Balanced Soft Seat",
-                    "6": "Trim C, Balanced Soft Seat",
-                    "7": "Trim A, Unbalanced Hard Seat",
-                    "8": "Trim B, Unbalanced Hard Seat",
-                    "9": "Trim C, Unbalanced Hard Seat",
-                }
-                return mapping.get(y, "")
-            
-            if "-77" in m:
-                mapping = {
-                    "0": "Optional Trim",
-                    "1": "Bottom entry; outlet spool",
-                    "2": "Top entry; bolted bonnet",
-                    "3": "Compact Top entry; bolted bonnet",
-                }
-                return mapping.get(y, "")
-
-            return ""
-
         df["Trim Type-Des"] = df["Model Number"].apply(lambda x: trim_type_desc(x))
-        progress.progress(90)
+        progress.progress(80)
 
         # =======================
         # PIN CODE
@@ -389,7 +386,7 @@ if uploaded_file:
 
         df["PIN-Code"] = df[pin_columns].fillna("").astype(str).agg("".join, axis=1)
         df["PIN-Code-Length"] = df["PIN-Code"].astype(str).str.len()
-        progress.progress(95)
+        progress.progress(85)
 
         # =======================
         # PIN DESCRIPTION
@@ -413,7 +410,12 @@ if uploaded_file:
         ]
 
         df["PIN-Code description"] = df[desc_columns].fillna("").astype(str).agg(", ".join, axis=1)
-
+        progress.progress(90)
+        
+        # =======================
+        # STREAMLIT END CODE
+        # =======================
+        
         # =======================
         # SAVE FILE
         # =======================
