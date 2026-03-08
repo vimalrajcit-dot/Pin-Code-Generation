@@ -251,7 +251,7 @@ for col_name, col_idx in header_map.items():
 
 wb.save(output_file)
 
-        if st.button("Run Processing"):
+  if st.button("Run Processing"):
     progress = st.progress(0)
     status = st.empty()
 
@@ -284,7 +284,7 @@ wb.save(output_file)
     wb = load_workbook(output_file)
     ws = wb.active
 
-    # header and fill logic (indented properly)
+    # header and fill logic
     for col_name, col_idx in header_map.items():
         cell = ws.cell(row=1, column=col_idx)
         if col_name in new_columns:
