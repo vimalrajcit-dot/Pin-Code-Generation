@@ -281,26 +281,40 @@ if st.button("Run Processing"):
     df.to_excel(output_file, index=False)
 
     # FORMATTING (openpyxl)
-    wb = load_workbook(output_file)
-    ws = wb.active
+wb = load_workbook(output_file)
+ws = wb.active
 
-    # header and fill logic
-    for col_name, col_idx in header_map.items():
-        cell = ws.cell(row=1, column=col_idx)
-        if col_name in new_columns:
-            cell.fill = green_fill
+green_fill = PatternFill(start_color="92D050", end_color="92D050", fill_type="solid")
+yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
 
-        for row in range(2, ws.max_row + 1):
-            cell = ws.cell(row=row, column=col_idx)
-            if cell.value is None or str(cell.value).strip() == "":
-                cell.fill = yellow_fill
+# Build header map HERE (before loop)
+header_map = {ws.cell(row=1, column=col).value: col for col in range(1, ws.max_column + 1)}
 
-    wb.save(output_file)
+new_columns = [
+    "Model Number-Code", "In x Body x Out Size-Code", "Rating Class-Code",
+    "End Connection-Code", "Body Material-Code", "Body Studs-Code",
+    "Bonnet Type-Code", "Actuator Model-Code", "Actuator Size-Code",
+    "Plug Material-Code", "Plug Type-Code", "Trim Type-Code",
+    "Seat Type-Code", "Trim Characteristic-Code", "Trim Type-Des",
+    "Plug Type-Des", "PIN-Code", "PIN-Code description"
+]
 
-    progress.progress(100)
-    status.success("✅ Processing complete!")
+for col_name, col_idx in header_map.items():
+    cell = ws.cell(row=1, column=col_idx)
+    if col_name in new_columns:
+        cell.fill = green_fill
 
-    with open(output_file, "rb") as f:
+    for row in range(2, ws.max_row + 1):
+        cell = ws.cell(row=row, column=col_idx)
+        if cell.value is None or str(cell.value).strip() == "":
+            cell.fill = yellow_fill
+
+wb.save(output_file)
+
+progress.progress(100)
+status.success("✅ Processing complete!")
+
+with open(output_file, "rb") as f:
         st.download_button(
             label="📥 Download Processed Excel",
             data=f,
