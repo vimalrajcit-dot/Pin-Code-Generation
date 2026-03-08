@@ -251,7 +251,7 @@ for col_name, col_idx in header_map.items():
 
 wb.save(output_file)
 
-  if st.button("Run Processing"):
+if st.button("Run Processing"):
     progress = st.progress(0)
     status = st.empty()
 
