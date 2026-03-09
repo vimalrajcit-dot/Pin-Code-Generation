@@ -321,6 +321,10 @@ if uploaded_file and run_process:
 
     st.success("PIN Generation Completed")
 
+    if uploaded_file and run_process:
+
+    # processing happens here
+
     with open(output_file, "rb") as f:
         st.download_button(
             label="Download Generated File",
