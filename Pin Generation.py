@@ -5,6 +5,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 import tempfile
 import os
+import time
 
 # =======================
 # STREAMLIT UI SETUP
@@ -13,6 +14,16 @@ st.set_page_config(page_title="PIN Code Generator", layout="wide")
 
 st.title("🔧 PIN Code Generator")
 st.markdown("Upload an Excel file to generate PIN codes based on the configured mappings.")
+
+# Initialize session state
+if 'processed' not in st.session_state:
+    st.session_state['processed'] = False
+if 'output_file' not in st.session_state:
+    st.session_state['output_file'] = None
+if 'df_result' not in st.session_state:
+    st.session_state['df_result'] = None
+if 'original_filename' not in st.session_state:
+    st.session_state['original_filename'] = None
 
 # File uploader
 uploaded_file = st.file_uploader("Choose an Excel file", type=['xlsx'])
@@ -353,8 +364,9 @@ if uploaded_file is not None:
 
                 # =======================# ===== DO NOT MODIFY END =====
                 
-                # Create output file in temp directory
-                output_file = tempfile.NamedTemporaryFile(delete=False, suffix='_PIN_Generated.xlsx').name
+                # Create output file in a persistent location
+                output_dir = tempfile.mkdtemp()
+                output_file = os.path.join(output_dir, f"PIN_Generated_{uploaded_file.name}")
                 df.to_excel(output_file, index=False)
 
                 # =======================
@@ -427,10 +439,17 @@ if uploaded_file is not None:
 
                 wb.save(output_file)
                 
-                # Store the output file path in session state for download
+                # Store in session state
                 st.session_state['output_file'] = output_file
                 st.session_state['df_result'] = df
+                st.session_state['original_filename'] = uploaded_file.name
                 st.session_state['processed'] = True
+                
+                # Clean up the input temp file
+                try:
+                    os.unlink(file_path)
+                except:
+                    pass
     
     with col2:
         if st.session_state.get('processed', False):
@@ -451,24 +470,22 @@ if uploaded_file is not None:
                 invalid_pins = st.session_state['df_result']['PIN-Code-Length'].lt(18).sum()
                 st.metric("Invalid PINs (<18 chars)", invalid_pins)
             
-            # Download button
-            with open(st.session_state['output_file'], 'rb') as f:
-                st.download_button(
-                    label="📥 Download Generated Excel File",
-                    data=f,
-                    file_name=f"PIN_Generated_{uploaded_file.name}",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            
-            # Clean up temp files
-            try:
-                os.unlink(file_path)
-                os.unlink(st.session_state['output_file'])
-            except:
-                pass
+            # Download button - read file at download time
+            if st.session_state['output_file'] and os.path.exists(st.session_state['output_file']):
+                with open(st.session_state['output_file'], 'rb') as f:
+                    st.download_button(
+                        label="📥 Download Generated Excel File",
+                        data=f,
+                        file_name=f"PIN_Generated_{st.session_state['original_filename']}",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+            else:
+                st.error("Output file not found. Please regenerate.")
 
 else:
     st.info("👆 Please upload an Excel file to begin.")
+    # Reset session state when no file is uploaded
+    st.session_state['processed'] = False
 
 # Footer
 st.markdown("---")
