@@ -319,11 +319,9 @@ if uploaded_file and run_process:
 
     progress.progress(100)
 
-    st.success("PIN Generation Completed")
+st.success("PIN Generation Completed")
 
-    if uploaded_file and run_process:
-
-    # processing happens here
+if uploaded_file and run_process:
 
     with open(output_file, "rb") as f:
         st.download_button(
