@@ -315,18 +315,16 @@ if uploaded_file and run_process:
                     if cell.value is None or str(cell.value).strip()=="":
                         cell.fill = yellow_fill
 
-        wb.save(output_file)
+        wb.save(output_path)
 
-    progress.progress(100)
-
+progress.progress(100)
 st.success("PIN Generation Completed")
 
-if uploaded_file and run_process:
-
-    with open(output_file, "rb") as f:
+if output_path and Path(output_path).exists():
+    with open(output_path, "rb") as f:
         st.download_button(
             label="Download Generated File",
             data=f,
-            file_name=Path(output_file).name,
+            file_name="PIN_Generated.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
