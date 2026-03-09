@@ -11,14 +11,15 @@ from openpyxl.styles import PatternFill
 def contains_map(text, mapping, default="", method="new"):
     if pd.isna(text) or str(text).strip() == "":
         return default
-    target = str(text)
+    target = str(text).strip()
+    target_upper = target.upper()
     if method == "new":
         for key in sorted(mapping.keys(), key=len, reverse=True):
-            if key in target:
+            if str(key).upper() in target_upper:
                 return mapping[key]
     elif method == "old":
         for key, value in mapping.items():
-            if key in target:
+            if str(key).upper() in target_upper:
                 return value
     return default
 
@@ -26,9 +27,10 @@ def contains_map(text, mapping, default="", method="new"):
 def extract_after_dash(text, index, method="new"):
     if pd.isna(text) or str(text).strip() == "":
         return ""
-    text = str(text)
+    text = str(text).strip()
     if method == "new":
-        parts = text.split("-")
+        # Normalize spacing and ignore empty fragments caused by malformed patterns like "--".
+        parts = [part.strip() for part in text.split("-") if part.strip() != ""]
         return parts[index].strip() if index < len(parts) else ""
     elif method == "old":
         if "-" not in text:
@@ -148,13 +150,13 @@ if uploaded_file and run_process:
     df["Plug Material-Code"] = df["Plug Material"].apply(plug_material_code)
 
     # 11 Plug Type-Code
-    df["Plug Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash_safe(x, 2))
+    df["Plug Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 2))
 
     # 12 Trim Type-Code
-    df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash_safe(x, 3))
+    df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 3))
 
     # 13 Seat Type-Code
-    df["Seat Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash_safe(x, 4))
+    df["Seat Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 4))
 
     # 14 TRIM CHARACTERISTIC - code
     trim_char_map = {
