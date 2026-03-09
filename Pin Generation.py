@@ -66,8 +66,7 @@ if uploaded_file and run_process:
         part = str(text).split("-", 1)[1]
         return part[index] if len(part) > index else ""
 
-# ===== DO NOT MODIFY START =====   
-
+                
         # =======================
         # MODEL NUMBER
         # =======================
