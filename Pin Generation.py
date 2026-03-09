@@ -1,35 +1,73 @@
 import streamlit as st
 import pandas as pd
 from pathlib import Path
-from openpyxl import load_workbook
-from openpyxl.styles import PatternFill
 import tempfile
 import os
 
+from ctypes.wintypes import SIZE
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
+from streamlit import code
+from zmq import TYPE
+
 # =======================
-# STREAMLIT START
+# STREAMLIT UI
 # =======================
 st.set_page_config(page_title="PIN Code Generator", layout="wide")
-st.title("🚀 PIN Code Generator")
+st.title("PIN Code Generator")
 
-# File uploader
 uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
-if uploaded_file:
-    # Read the uploaded file
-    df = pd.read_excel(uploaded_file)
+run_process = st.button("Run PIN Generation")
+
+if uploaded_file and run_process:
+
+    progress = st.progress(0)
+
+    # Save uploaded file to temp location
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, uploaded_file.name)
+
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    progress.progress(10)
+
+    # =======================
+    # FILE SETUP
+    # =======================
+    folder_path = temp_dir
+    excel_files = list(Path(folder_path).glob("*.xlsx"))
+
+    if not excel_files:
+        st.error("No Excel files found in the folder")
+
+    file_path = excel_files[0]
+    df = pd.read_excel(file_path)
     df.columns = df.columns.str.strip()
-    
-    st.info("File uploaded successfully ✅")
-    
-    # Optional: Show preview of data
-    with st.expander("Preview Data"):
-        st.write(df.head())
-    
-    if st.button("Run Processing"):
-        progress = st.progress(0)
-        status = st.empty()
-        
+
+    progress.progress(20)
+
+    # =======================
+    # HELPER FUNCTIONS
+    # =======================
+    def contains_map(text, mapping, default=""):
+        if pd.isna(text):
+            return default
+        text = str(text)
+        for key, value in mapping.items():
+            if key in text:
+                return value
+        return default
+
+    def extract_after_dash(text, index):
+        if pd.isna(text) or "-" not in str(text):
+            return ""
+        part = str(text).split("-", 1)[1]
+        return part[index] if len(part) > index else ""
+
+# ===== DO NOT MODIFY START =====   
+
         # =======================
         # MODEL NUMBER
         # =======================
@@ -277,17 +315,16 @@ if uploaded_file:
                     if cell.value is None or str(cell.value).strip()=="":
                         cell.fill = yellow_fill
 
-        wb.save(output_path)
-        progress.progress(100)
-        status.success("✅ Processing complete!")
+        wb.save(output_file)
 
-        with open(output_path,"rb") as f:
-            file_data = f.read()
-        os.unlink(output_path)
+    progress.progress(100)
 
+    st.success("PIN Generation Completed")
+
+    with open(output_file, "rb") as f:
         st.download_button(
-            label="📥 Download Processed Excel",
-            data=file_data,
-            file_name=f"{Path(uploaded_file.name).stem}_PIN_Generated.xlsx",
+            label="Download Generated File",
+            data=f,
+            file_name=Path(output_file).name,
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
