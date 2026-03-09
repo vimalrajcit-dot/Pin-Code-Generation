@@ -148,13 +148,13 @@ if uploaded_file and run_process:
     df["Plug Material-Code"] = df["Plug Material"].apply(plug_material_code)
 
     # 11 Plug Type-Code
-    df["Plug Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 2))
+    df["Plug Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash_safe(x, 2))
 
     # 12 Trim Type-Code
-    df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 3))
+    df["Trim Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash_safe(x, 3))
 
     # 13 Seat Type-Code
-    df["Seat Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash(x, 4))
+    df["Seat Type-Code"] = df["Model Number"].apply(lambda x: extract_after_dash_safe(x, 4))
 
     # 14 TRIM CHARACTERISTIC - code
     trim_char_map = {
